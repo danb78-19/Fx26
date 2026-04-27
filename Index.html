@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="FX Signals" />
+<meta name="theme-color" content="#0a0e14" />
+<title>FX Signals</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e14; --bg-2: #11161f; --bg-3: #1a2130;
+    --line: #1f2937; --line-2: #2a3548;
+    --text: #e6edf3; --text-dim: #8b95a7; --text-faint: #5a6478;
+    --buy: #00d68f; --sell: #ff5577; --neutral: #f0b429; --accent: #6ee7ff;
+    --shadow: 0 1px 0 rgba(255,255,255,0.04) inset, 0 24px 48px -16px rgba(0,0,0,0.6);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text);
+    font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 14px; line-height: 1.5;
+    min-height: 100vh; overscroll-behavior-y: none; -webkit-font-smoothing: antialiased; }
+  body { background: radial-gradient(ellipse at top, rgba(110,231,255,0.06), transparent 60%),
+    radial-gradient(ellipse at bottom right, rgba(0,214,143,0.04), transparent 50%), var(--bg);
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 24px 20px 80px; }
+  header { display: flex; align-items: baseline; justify-content: space-between;
+    padding-bottom: 20px; margin-bottom: 24px; border-bottom: 1px solid var(--line); }
+  .brand { font-family: 'Fraunces', serif; font-weight: 800; font-size: clamp(28px, 5vw, 42px);
+    letter-spacing: -0.02em; line-height: 1; }
+  .brand .dot { color: var(--accent); }
+  .meta { font-size: 11px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.15em; text-align: right; }
+  .meta .live::before { content: ''; display: inline-block; width: 6px; height: 6px;
+    background: var(--buy); border-radius: 50%; margin-right: 6px;
+    box-shadow: 0 0 8px var(--buy); animation: pulse 1.6s infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+  .controls { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; align-items: center; }
+  button, .btn { background: var(--bg-2); border: 1px solid var(--line-2); color: var(--text);
+    font-family: inherit; font-size: 12px; padding: 10px 16px; border-radius: 8px;
+    cursor: pointer; transition: all 0.15s ease; text-transform: uppercase;
+    letter-spacing: 0.1em; font-weight: 500; min-height: 44px; }
+  button:hover { background: var(--bg-3); border-color: var(--accent); }
+  button:active { transform: scale(0.98); }
+  button.primary { background: var(--accent); color: #001018; border-color: var(--accent); font-weight: 700; }
+  button.primary:hover { background: #99f0ff; }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  .spacer { flex: 1; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }
+  .card { background: var(--bg-2); border: 1px solid var(--line); border-radius: 14px;
+    padding: 18px; box-shadow: var(--shadow); position: relative; overflow: hidden;
+    transition: border-color 0.2s ease, transform 0.2s ease; }
+  .card:hover { border-color: var(--line-2); }
+  .card.buy::before, .card.sell::before, .card.neutral::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
+  .card.buy::before { background: var(--buy); }
+  .card.sell::before { background: var(--sell); }
+  .card.neutral::before { background: var(--neutral); }
+  .card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .pair { font-family: 'Fraunces', serif; font-weight: 600; font-size: 24px; letter-spacing: -0.01em; }
+  .price-block { text-align: right; }
+  .price { font-size: 18px; font-weight: 500; }
+  .change { font-size: 11px; margin-top: 2px; }
+  .change.up { color: var(--buy); }
+  .change.down { color: var(--sell); }
+  .signal-row { display: flex; align-items: center; gap: 10px; margin: 14px 0 10px; }
+  .signal-tag { padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.1em; }
+  .signal-tag.buy { background: rgba(0,214,143,0.15); color: var(--buy); border: 1px solid rgba(0,214,143,0.3); }
+  .signal-tag.sell { background: rgba(255,85,119,0.15); color: var(--sell); border: 1px solid rgba(255,85,119,0.3); }
+  .signal-tag.neutral { background: rgba(240,180,41,0.15); color: var(--neutral); border: 1px solid rgba(240,180,41,0.3); }
+  .confidence { font-size: 11px; color: var(--text-dim); }
+  .indicators { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+    margin: 12px 0; padding: 10px; background: var(--bg); border-radius: 8px; border: 1px solid var(--line); }
+  .ind { text-align: center; }
+  .ind-label { font-size: 9px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.1em; }
+  .ind-val { font-size: 13px; font-weight: 500; margin-top: 2px; }
+  .reasoning { font-size: 12px; color: var(--text-dim); line-height: 1.55;
+    margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--line);
+    font-family: 'Fraunces', serif; font-style: italic; }
+  .reasoning .label { font-family: 'JetBrains Mono', monospace; font-style: normal; font-size: 9px;
+    color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.1em;
+    display: block; margin-bottom: 4px; }
+  .skeleton { background: linear-gradient(90deg, var(--bg-3) 0%, var(--line-2) 50%, var(--bg-3) 100%);
+    background-size: 200% 100%; animation: shimmer 1.4s infinite; border-radius: 4px; }
+  @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+  .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
+  .modal-bg.show { display: flex; }
+  .modal { background: var(--bg-2); border: 1px solid var(--line-2); border-radius: 16px;
+    padding: 28px; max-width: 500px; width: 100%; box-shadow: var(--shadow); }
+  .modal h2 { font-family: 'Fraunces', serif; font-weight: 600; margin: 0 0 8px; font-size: 26px; letter-spacing: -0.01em; }
+  .modal p { color: var(--text-dim); font-size: 13px; margin: 0 0 20px; line-height: 1.6; }
+  .modal label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--text-faint); margin-bottom: 6px; margin-top: 14​​​​​​​​​​​​​​​​
