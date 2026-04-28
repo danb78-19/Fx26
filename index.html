@@ -75,6 +75,8 @@ button:disabled { opacity: 0.5; }
 .modal p { color: var(--text-dim); font-size: 13px; margin: 0 0 20px; }
 .modal label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); margin-bottom: 6px; margin-top: 14px; }
 .modal input { width: 100%; background: var(--bg); border: 1px solid var(--line-2); color: var(--text); font-family: inherit; font-size: 13px; padding: 12px 14px; border-radius: 8px; outline: none; min-height: 44px; }
+.input-row { display: flex; gap: 8px; align-items: stretch; }
+.input-row input { flex: 1; }
 .modal .actions { display: flex; gap: 8px; margin-top: 22px; justify-content: flex-end; flex-wrap: wrap; }
 .hint { font-size: 11px; color: var(--text-faint); margin-top: 6px; }
 .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-100px); background: var(--bg-3); border: 1px solid var(--line-2); color: var(--text); padding: 12px 18px; border-radius: 8px; font-size: 13px; z-index: 200; transition: transform 0.3s ease; }
@@ -134,13 +136,13 @@ button:disabled { opacity: 0.5; }
     <div class="controls">
       <button id="clear-journal">Clear Journal</button>
       <div class="spacer"></div>
-      <span style="font-size: 11px; color: var(--text-faint);">Tap a signal card to log a trade</span>
+      <span style="font-size: 11px; color: var(--text-faint);">Tap a signal card to log a trade · Auto-checks SL/TP on refresh</span>
     </div>
     <div id="journal-list"></div>
   </div>
 
   <div class="disclaimer">
-    <strong>Not financial advice.</strong> Signals and SL/TP are algorithmic suggestions based on technical indicators and a fixed 1:2 risk-reward template. No system delivers guaranteed win rates. Use proper risk management.
+    <strong>Not financial advice.</strong> Auto-close uses hourly close prices, not tick data, so intra-hour wicks may be missed. Real broker fills will differ due to spread and slippage. Use proper risk management.
   </div>
 </div>
 
@@ -183,9 +185,13 @@ button:disabled { opacity: 0.5; }
 <div class="modal-bg" id="close-modal">
   <div class="modal">
     <h2 id="close-title">Close Trade</h2>
-    <p>Enter the exit price. Win/Loss, pips, and R will be calculated.</p>
+    <p>Enter the exit price, or tap "Use Current" to auto-fill from the live feed.</p>
     <label>Exit Price</label>
-    <input type="text" id="close-exit" inputmode="decimal" />
+    <div class="input-row">
+      <input type="text" id="close-exit" inputmode="decimal" />
+      <button id="close-use-current" class="small">↻ Use Current</button>
+    </div>
+    <div class="hint">Real broker fills will differ from the live feed due to spread and slippage.</div>
     <div class="actions">
       <button id="close-cancel">Cancel</button>
       <button id="close-save" class="primary">Close Trade</button>
@@ -249,7 +255,7 @@ async function fetchPair(symbol, apiKey) {
   const closes = data.values.map(function(v) { return parseFloat(v.close); }).reverse();
   const latest = data.values[0]; const prev = data.values[1];
   const change = latest && prev ? ((parseFloat(latest.close) - parseFloat(prev.close)) / parseFloat(prev.close)) * 100 : 0;
-  return { closes: closes, change: change, latest: parseFloat(latest.close) };
+  return { closes: closes, change: change, latest: parseFloat(latest.close), high: parseFloat(latest.high), low: parseFloat(latest.low) };
 }
 async function getAICommentary(pair, sig, apiKey) {
   if (!apiKey) return null;
@@ -298,17 +304,61 @@ function toast(msg, type) {
   el.className = 'toast show' + (type ? ' ' + type : '');
   setTimeout(function() { el.classList.remove('show'); }, 3000);
 }
+function checkAutoCloses(symbol, data) {
+  const trades = loadJournal();
+  let changed = false;
+  let autoClosed = [];
+  const pip = pipValue(symbol);
+  for (let i = 0; i < trades.length; i++) {
+    const t = trades[i];
+    if (t.symbol !== symbol || t.status !== 'open') continue;
+    const tpPips = t.tpPips || DEFAULT_TP_PIPS;
+    const stopPips = t.stopPips || DEFAULT_STOP_PIPS;
+    const tpPrice = t.direction === 'buy' ? t.entry + (tpPips * pip) : t.entry - (tpPips * pip);
+    const slPrice = t.direction === 'buy' ? t.entry - (stopPips * pip) : t.entry + (stopPips * pip);
+    const high = data.high || data.latest;
+    const low = data.low || data.latest;
+    let exitPrice = null;
+    let outcome = null;
+    if (t.direction === 'buy') {
+      if (high >= tpPrice) { exitPrice = tpPrice; outcome = 'win'; }
+      else if (low <= slPrice) { exitPrice = slPrice; outcome = 'loss'; }
+    } else {
+      if (low <= tpPrice) { exitPrice = tpPrice; outcome = 'win'; }
+      else if (high >= slPrice) { exitPrice = slPrice; outcome = 'loss'; }
+    }
+    if (exitPrice !== null) {
+      let priceDiff = exitPrice - t.entry;
+      if (t.direction === 'sell') priceDiff = -priceDiff;
+      const pips = priceDiff / pip;
+      const r = pips / stopPips;
+      trades[i].exit = parseFloat(exitPrice.toFixed(priceDecimals(symbol)));
+      trades[i].pips = pips;
+      trades[i].r = r;
+      trades[i].status = outcome;
+      trades[i].closedAt = Date.now();
+      trades[i].autoClosed = true;
+      changed = true;
+      autoClosed.push({ symbol: symbol, outcome: outcome, pips: pips });
+    }
+  }
+  if (changed) saveJournal(trades);
+  return autoClosed;
+}
 async function refreshAll() {
   const cfg = loadConfig();
   if (!cfg.tdKey) { openModal(); toast('Add your TwelveData API key', 'error'); return; }
   document.getElementById('refresh').disabled = true;
   showSkeletons(); setStatus('Fetching...');
   let done = 0;
+  let allAutoClosed = [];
   for (const pair of PAIRS) {
     try {
       const data = await fetchPair(pair.symbol, cfg.tdKey);
       const sig = generateSignal(data.closes);
       currentSignals[pair.symbol] = { pair: pair, data: data, sig: sig };
+      const closed = checkAutoCloses(pair.symbol, data);
+      if (closed.length) allAutoClosed = allAutoClosed.concat(closed);
       const cardEl = grid.querySelector('[data-symbol="' + CSS.escape(pair.symbol) + '"]');
       if (cardEl) cardEl.outerHTML = renderCard(pair, data, sig, null);
       if (cfg.claudeKey) {
@@ -330,7 +380,15 @@ async function refreshAll() {
   ts.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   setStatus('Done');
   document.getElementById('refresh').disabled = false;
-  toast('Signals updated', 'success');
+  renderStats();
+  renderJournal();
+  if (allAutoClosed.length) {
+    const wins = allAutoClosed.filter(function(c) { return c.outcome === 'win'; }).length;
+    const losses = allAutoClosed.length - wins;
+    toast('Auto-closed ' + allAutoClosed.length + ' trade(s): ' + wins + ' win, ' + losses + ' loss', wins >= losses ? 'success' : 'error');
+  } else {
+    toast('Signals updated', 'success');
+  }
 }
 </script>
 <script>
@@ -344,10 +402,11 @@ function renderJournal() {
     const rStr = t.r !== undefined ? (t.r >= 0 ? '+' : '') + t.r.toFixed(2) + 'R' : '—';
     const exitStr = t.exit !== undefined ? t.exit : '—';
     const tpStr = t.tpPips !== undefined ? t.tpPips : '—';
+    const autoTag = t.autoClosed ? ' · AUTO' : '';
     const actions = status === 'open'
       ? '<button class="small primary close-btn" data-id="' + t.id + '">Close Trade</button> <button class="small delete-btn" data-id="' + t.id + '">Delete</button>'
       : '<button class="small delete-btn" data-id="' + t.id + '">Delete</button>';
-    return '<div class="journal-entry ' + status + '"><div class="je-head"><div><span class="je-pair">' + t.symbol + '</span> <span class="signal-tag ' + t.direction + '" style="margin-left:8px">' + t.direction + '</span></div><div class="je-meta">' + dateStr + ' · ' + status.toUpperCase() + '</div></div><div class="je-body"><div class="je-field"><div class="je-field-label">Entry</div><div class="je-field-val">' + t.entry + '</div></div><div class="je-field"><div class="je-field-label">Exit</div><div class="je-field-val">' + exitStr + '</div></div><div class="je-field"><div class="je-field-label">SL pips</div><div class="je-field-val">' + t.stopPips + '</div></div><div class="je-field"><div class="je-field-label">TP pips</div><div class="je-field-val">' + tpStr + '</div></div><div class="je-field"><div class="je-field-label">Pips</div><div class="je-field-val ' + (t.pips > 0 ? 'change up' : t.pips < 0 ? 'change down' : '') + '">' + pipsStr + '</div></div><div class="je-field"><div class="je-field-label">R</div><div class="je-field-val ' + (t.r > 0 ? 'change up' : t.r < 0 ? 'change down' : '') + '">' + rStr + '</div></div></div><div class="je-actions">' + actions + '</div></div>';
+    return '<div class="journal-entry ' + status + '"><div class="je-head"><div><span class="je-pair">' + t.symbol + '</span> <span class="signal-tag ' + t.direction + '" style="margin-left:8px">' + t.direction + '</span></div><div class="je-meta">' + dateStr + ' · ' + status.toUpperCase() + autoTag + '</div></div><div class="je-body"><div class="je-field"><div class="je-field-label">Entry</div><div class="je-field-val">' + t.entry + '</div></div><div class="je-field"><div class="je-field-label">Exit</div><div class="je-field-val">' + exitStr + '</div></div><div class="je-field"><div class="je-field-label">SL pips</div><div class="je-field-val">' + t.stopPips + '</div></div><div class="je-field"><div class="je-field-label">TP pips</div><div class="je-field-val">' + tpStr + '</div></div><div class="je-field"><div class="je-field-label">Pips</div><div class="je-field-val ' + (t.pips > 0 ? 'change up' : t.pips < 0 ? 'change down' : '') + '">' + pipsStr + '</div></div><div class="je-field"><div class="je-field-label">R</div><div class="je-field-val ' + (t.r > 0 ? 'change up' : t.r < 0 ? 'change down' : '') + '">' + rStr + '</div></div></div><div class="je-actions">' + actions + '</div></div>';
   }).join('');
   journalList.querySelectorAll('.close-btn').forEach(function(b) { b.addEventListener('click', function() { openCloseModal(b.dataset.id); }); });
   journalList.querySelectorAll('.delete-btn').forEach(function(b) { b.addEventListener('click', function() { deleteTrade(b.dataset.id); }); });
@@ -426,6 +485,27 @@ function openCloseModal(id) {
 }
 function closeCloseModal() { document.getElementById('close-modal').classList.remove('show'); pendingClose = null; }
 document.getElementById('close-cancel').addEventListener('click', closeCloseModal);
+document.getElementById('close-use-current').addEventListener('click', async function() {
+  if (!pendingClose) return;
+  const cfg = loadConfig();
+  if (!cfg.tdKey) { toast('No API key set', 'error'); return; }
+  const cached = currentSignals[pendingClose.symbol];
+  if (cached) {
+    document.getElementById('close-exit').value = cached.data.latest.toFixed(priceDecimals(pendingClose.symbol));
+    toast('Filled from cached price', 'success');
+    return;
+  }
+  const btn = document.getElementById('close-use-current');
+  btn.disabled = true; btn.textContent = '...';
+  try {
+    const data = await fetchPair(pendingClose.symbol, cfg.tdKey);
+    document.getElementById('close-exit').value = data.latest.toFixed(priceDecimals(pendingClose.symbol));
+    toast('Live price filled', 'success');
+  } catch (e) {
+    toast('Fetch failed: ' + e.message, 'error');
+  }
+  btn.disabled = false; btn.textContent = '↻ Use Current';
+});
 document.getElementById('close-save').addEventListener('click', function() {
   if (!pendingClose) return;
   const exit = parseFloat(document.getElementById('close-exit').value);
