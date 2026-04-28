@@ -12,87 +12,241 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,800&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #0a0e14; --bg-2: #11161f; --bg-3: #1a2130;
-    --line: #1f2937; --line-2: #2a3548;
-    --text: #e6edf3; --text-dim: #8b95a7; --text-faint: #5a6478;
-    --buy: #00d68f; --sell: #ff5577; --neutral: #f0b429; --accent: #6ee7ff;
-    --shadow: 0 1px 0 rgba(255,255,255,0.04) inset, 0 24px 48px -16px rgba(0,0,0,0.6);
+:root { --bg: #0a0e14; --bg-2: #11161f; --bg-3: #1a2130; --line: #1f2937; --line-2: #2a3548; --text: #e6edf3; --text-dim: #8b95a7; --text-faint: #5a6478; --buy: #00d68f; --sell: #ff5577; --neutral: #f0b429; --accent: #6ee7ff; --shadow: 0 1px 0 rgba(255,255,255,0.04) inset, 0 24px 48px -16px rgba(0,0,0,0.6); }
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 14px; line-height: 1.5; min-height: 100vh; overscroll-behavior-y: none; -webkit-font-smoothing: antialiased; }
+body { background: radial-gradient(ellipse at top, rgba(110,231,255,0.06), transparent 60%), radial-gradient(ellipse at bottom right, rgba(0,214,143,0.04), transparent 50%), var(--bg); padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+.wrap { max-width: 1200px; margin: 0 auto; padding: 24px 20px 80px; }
+header { display: flex; align-items: baseline; justify-content: space-between; padding-bottom: 20px; margin-bottom: 24px; border-bottom: 1px solid var(--line); }
+.brand { font-family: 'Fraunces', serif; font-weight: 800; font-size: clamp(28px, 5vw, 42px); letter-spacing: -0.02em; line-height: 1; }
+.brand .dot { color: var(--accent); }
+.meta { font-size: 11px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.15em; text-align: right; }
+.meta .live::before { content: ''; display: inline-block; width: 6px; height: 6px; background: var(--buy); border-radius: 50%; margin-right: 6px; box-shadow: 0 0 8px var(--buy); animation: pulse 1.6s infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+.controls { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; align-items: center; }
+button { background: var(--bg-2); border: 1px solid var(--line-2); color: var(--text); font-family: inherit; font-size: 12px; padding: 10px 16px; border-radius: 8px; cursor: pointer; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 500; min-height: 44px; }
+button.primary { background: var(--accent); color: #001018; border-color: var(--accent); font-weight: 700; }
+button:disabled { opacity: 0.5; }
+.spacer { flex: 1; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }
+.card { background: var(--bg-2); border: 1px solid var(--line); border-radius: 14px; padding: 18px; box-shadow: var(--shadow); position: relative; overflow: hidden; }
+.card.buy::before, .card.sell::before, .card.neutral::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
+.card.buy::before { background: var(--buy); }
+.card.sell::before { background: var(--sell); }
+.card.neutral::before { background: var(--neutral); }
+.card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.pair { font-family: 'Fraunces', serif; font-weight: 600; font-size: 24px; }
+.price-block { text-align: right; }
+.price { font-size: 18px; font-weight: 500; }
+.change { font-size: 11px; margin-top: 2px; }
+.change.up { color: var(--buy); }
+.change.down { color: var(--sell); }
+.signal-row { display: flex; align-items: center; gap: 10px; margin: 14px 0 10px; }
+.signal-tag { padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; }
+.signal-tag.buy { background: rgba(0,214,143,0.15); color: var(--buy); border: 1px solid rgba(0,214,143,0.3); }
+.signal-tag.sell { background: rgba(255,85,119,0.15); color: var(--sell); border: 1px solid rgba(255,85,119,0.3); }
+.signal-tag.neutral { background: rgba(240,180,41,0.15); color: var(--neutral); border: 1px solid rgba(240,180,41,0.3); }
+.confidence { font-size: 11px; color: var(--text-dim); }
+.indicators { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 12px 0; padding: 10px; background: var(--bg); border-radius: 8px; border: 1px solid var(--line); }
+.ind { text-align: center; }
+.ind-label { font-size: 9px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.1em; }
+.ind-val { font-size: 13px; font-weight: 500; margin-top: 2px; }
+.reasoning { font-size: 12px; color: var(--text-dim); line-height: 1.55; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--line); font-family: 'Fraunces', serif; font-style: italic; }
+.reasoning .label { font-family: 'JetBrains Mono', monospace; font-style: normal; font-size: 9px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.1em; display: block; margin-bottom: 4px; }
+.modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
+.modal-bg.show { display: flex; }
+.modal { background: var(--bg-2); border: 1px solid var(--line-2); border-radius: 16px; padding: 28px; max-width: 500px; width: 100%; }
+.modal h2 { font-family: 'Fraunces', serif; margin: 0 0 8px; font-size: 26px; }
+.modal p { color: var(--text-dim); font-size: 13px; margin: 0 0 20px; }
+.modal label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); margin-bottom: 6px; margin-top: 14px; }
+.modal input { width: 100%; background: var(--bg); border: 1px solid var(--line-2); color: var(--text); font-family: inherit; font-size: 13px; padding: 12px 14px; border-radius: 8px; outline: none; min-height: 44px; }
+.modal .actions { display: flex; gap: 8px; margin-top: 22px; justify-content: flex-end; }
+.hint { font-size: 11px; color: var(--text-faint); margin-top: 6px; }
+.toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-100px); background: var(--bg-3); border: 1px solid var(--line-2); color: var(--text); padding: 12px 18px; border-radius: 8px; font-size: 13px; z-index: 200; transition: transform 0.3s ease; }
+.toast.show { transform: translateX(-50%) translateY(0); }
+.toast.error { border-color: var(--sell); }
+.toast.success { border-color: var(--buy); }
+.disclaimer { margin-top: 32px; padding: 14px 16px; background: var(--bg-2); border: 1px solid var(--line); border-left: 3px solid var(--neutral); border-radius: 8px; font-size: 12px; color: var(--text-dim); }
+@media (max-width: 600px) { .grid { grid-template-columns: 1fr; } header { flex-direction: column; align-items: flex-start; gap: 8px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">FX Signals<span class="dot">.</span></div>
+    <div class="meta">
+      <div class="live">Live · <span id="ts">—</span></div>
+      <div style="margin-top:4px">10 majors · technicals + AI</div>
+    </div>
+  </header>
+  <div class="controls">
+    <button id="refresh" class="primary">↻ Refresh Signals</button>
+    <button id="settings">⚙ Settings</button>
+    <div class="spacer"></div>
+    <span id="status" style="font-size: 11px; color: var(--text-faint);"></span>
+  </div>
+  <div id="grid" class="grid"></div>
+  <div class="disclaimer">
+    <strong>Not financial advice.</strong> Signals are algorithmic suggestions based on technical indicators. No system delivers guaranteed win rates. Use proper risk management.
+  </div>
+</div>
+<div class="modal-bg" id="modal">
+  <div class="modal">
+    <h2>Setup</h2>
+    <p>Both keys are stored only in your browser. They never leave your device except to call the providers directly.</p>
+    <label>TwelveData API Key</label>
+    <input type="password" id="td-key" placeholder="Paste your TwelveData key" autocomplete="off" />
+    <div class="hint">Free tier: 8 requests/min. Get one at twelvedata.com</div>
+    <label>Anthropic API Key (optional)</label>
+    <input type="password" id="claude-key" placeholder="sk-ant-... (leave blank to skip AI)" autocomplete="off" />
+    <div class="hint">Used for plain-English reasoning. Leave blank if you don't have one.</div>
+    <div class="actions">
+      <button id="cancel-settings">Cancel</button>
+      <button id="save-settings" class="primary">Save</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const PAIRS = [
+  { symbol: 'EUR/USD', name: 'Euro / US Dollar' },
+  { symbol: 'USD/JPY', name: 'US Dollar / Japanese Yen' },
+  { symbol: 'GBP/USD', name: 'British Pound / US Dollar' },
+  { symbol: 'USD/CHF', name: 'US Dollar / Swiss Franc' },
+  { symbol: 'AUD/USD', name: 'Australian / US Dollar' },
+  { symbol: 'USD/CAD', name: 'US Dollar / Canadian Dollar' },
+  { symbol: 'NZD/USD', name: 'New Zealand / US Dollar' },
+  { symbol: 'EUR/GBP', name: 'Euro / British Pound' },
+  { symbol: 'EUR/JPY', name: 'Euro / Japanese Yen' },
+  { symbol: 'GBP/JPY', name: 'British Pound / Japanese Yen' }
+];
+const STORAGE_KEY = 'fx-signals-config-v1';
+function loadConfig() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch { return {}; } }
+function saveConfig(cfg) { localStorage.setItem(STORAGE_KEY, JSON.stringify(cfg)); }
+function sma(values, period) { if (values.length < period) return null; const slice = values.slice(-period); return slice.reduce((a, b) => a + b, 0) / period; }
+function ema(values, period) { if (values.length < period) return null; const k = 2 / (period + 1); let e = values.slice(0, period).reduce((a, b) => a + b, 0) / period; for (let i = period; i < values.length; i++) e = values[i] * k + e * (1 - k); return e; }
+function rsi(values, period) { period = period || 14; if (values.length < period + 1) return null; let gains = 0, losses = 0; for (let i = 1; i <= period; i++) { const d = values[i] - values[i - 1]; if (d > 0) gains += d; else losses -= d; } let avgG = gains / period, avgL = losses / period; for (let i = period + 1; i < values.length; i++) { const d = values[i] - values[i - 1]; avgG = (avgG * (period - 1) + Math.max(d, 0)) / period; avgL = (avgL * (period - 1) + Math.max(-d, 0)) / period; } if (avgL === 0) return 100; return 100 - 100 / (1 + avgG / avgL); }
+function macd(values) { const e12 = ema(values, 12); const e26 = ema(values, 26); if (e12 === null || e26 === null) return null; return e12 - e26; }
+function generateSignal(closes) {
+  const last = closes[closes.length - 1];
+  const sma50 = sma(closes, 50);
+  const sma200 = sma(closes, 200) || sma(closes, Math.min(closes.length, 100));
+  const rsiVal = rsi(closes, 14);
+  const macdVal = macd(closes);
+  let score = 0; const reasons = [];
+  if (sma50 && sma200) { if (sma50 > sma200) { score += 1; reasons.push('MA50 above MA200 (uptrend)'); } else { score -= 1; reasons.push('MA50 below MA200 (downtrend)'); } }
+  if (rsiVal !== null) { if (rsiVal < 30) { score += 1; reasons.push('RSI ' + rsiVal.toFixed(1) + ' (oversold)'); } else if (rsiVal > 70) { score -= 1; reasons.push('RSI ' + rsiVal.toFixed(1) + ' (overbought)'); } else { reasons.push('RSI ' + rsiVal.toFixed(1) + ' (neutral)'); } }
+  if (macdVal !== null) { if (macdVal > 0) { score += 1; reasons.push('MACD positive'); } else { score -= 1; reasons.push('MACD negative'); } }
+  let signal = 'neutral';
+  if (score >= 2) signal = 'buy'; else if (score <= -2) signal = 'sell';
+  const confidence = Math.min(95, 40 + Math.abs(score) * 18);
+  return { signal: signal, confidence: confidence, score: score, reasons: reasons, indicators: { rsi: rsiVal !== null ? rsiVal.toFixed(1) : '—', macd: macdVal !== null ? macdVal.toFixed(5) : '—', sma50: sma50 ? sma50.toFixed(5) : '—' }, last: last };
+}
+</script>
+<script>
+async function fetchPair(symbol, apiKey) {
+  const url = 'https://api.twelvedata.com/time_series?symbol=' + encodeURIComponent(symbol) + '&interval=1h&outputsize=250&apikey=' + apiKey;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const data = await res.json();
+  if (data.status === 'error') throw new Error(data.message || 'API error');
+  if (!data.values) throw new Error('No data returned');
+  const closes = data.values.map(function(v) { return parseFloat(v.close); }).reverse();
+  const latest = data.values[0]; const prev = data.values[1];
+  const change = latest && prev ? ((parseFloat(latest.close) - parseFloat(prev.close)) / parseFloat(prev.close)) * 100 : 0;
+  return { closes: closes, change: change, latest: parseFloat(latest.close) };
+}
+async function getAICommentary(pair, sig, apiKey) {
+  if (!apiKey) return null;
+  const prompt = 'You are an FX analyst. In 1-2 short sentences (max 35 words), explain the technical setup for ' + pair.symbol + '. Signal: ' + sig.signal.toUpperCase() + ' (confidence ' + sig.confidence + '%). Price: ' + sig.last + '. Indicators: ' + sig.reasons.join(', ') + '. Be concise. No disclaimers.';
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+      body: JSON.stringify({ model: 'claude-haiku-4-5', max_tokens: 120, messages: [{ role: 'user', content: prompt }] })
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.content && data.content[0] && data.content[0].text ? data.content[0].text.trim() : null;
+  } catch (e) { return null; }
+}
+const grid = document.getElementById('grid');
+const ts = document.getElementById('ts');
+const statusEl = document.getElementById('status');
+function skeletonCard(pair) {
+  return '<div class="card" data-symbol="' + pair.symbol + '"><div class="card-head"><div><div class="pair">' + pair.symbol + '</div><div style="font-size:10px;color:var(--text-faint);margin-top:2px;text-transform:uppercase;letter-spacing:0.1em">' + pair.name + '</div></div></div><div style="margin-top:14px;font-size:12px;color:var(--text-faint)">Loading...</div></div>';
+}
+function renderCard(pair, data, sig, ai) {
+  const cls = sig.signal;
+  const changeCls = data.change >= 0 ? 'up' : 'down';
+  const changeSign = data.change >= 0 ? '▲' : '▼';
+  return '<div class="card ' + cls + '" data-symbol="' + pair.symbol + '"><div class="card-head"><div><div class="pair">' + pair.symbol + '</div><div style="font-size:10px;color:var(--text-faint);margin-top:2px;text-transform:uppercase;letter-spacing:0.1em">' + pair.name + '</div></div><div class="price-block"><div class="price">' + data.latest.toFixed(5) + '</div><div class="change ' + changeCls + '">' + changeSign + ' ' + Math.abs(data.change).toFixed(3) + '%</div></div></div><div class="signal-row"><span class="signal-tag ' + cls + '">' + sig.signal + '</span><span class="confidence">' + sig.confidence + '% confidence</span></div><div class="indicators"><div class="ind"><div class="ind-label">RSI 14</div><div class="ind-val">' + sig.indicators.rsi + '</div></div><div class="ind"><div class="ind-label">MACD</div><div class="ind-val">' + sig.indicators.macd + '</div></div><div class="ind"><div class="ind-label">SMA 50</div><div class="ind-val">' + sig.indicators.sma50 + '</div></div></div>' + (ai ? '<div class="reasoning"><span class="label">AI Analysis</span>' + ai + '</div>' : '<div class="reasoning"><span class="label">Reasoning</span>' + sig.reasons.join(' · ') + '</div>') + '</div>';
+}
+function renderError(pair, message) {
+  return '<div class="card" data-symbol="' + pair.symbol + '" style="border-color: var(--sell);"><div class="card-head"><div><div class="pair">' + pair.symbol + '</div><div style="font-size:10px;color:var(--text-faint);margin-top:2px;text-transform:uppercase;letter-spacing:0.1em">' + pair.name + '</div></div></div><div style="margin-top:14px;font-size:12px;color:var(--sell)">⚠ ' + message + '</div></div>';
+}
+function showSkeletons() { grid.innerHTML = PAIRS.map(skeletonCard).join(''); }
+function setStatus(msg) { statusEl.textContent = msg; }
+function toast(msg, type) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show' + (type ? ' ' + type : '');
+  setTimeout(function() { el.classList.remove('show'); }, 3000);
+}
+async function refreshAll() {
+  const cfg = loadConfig();
+  if (!cfg.tdKey) { openModal(); toast('Add your TwelveData API key', 'error'); return; }
+  document.getElementById('refresh').disabled = true;
+  showSkeletons(); setStatus('Fetching...');
+  let done = 0;
+  for (const pair of PAIRS) {
+    try {
+      const data = await fetchPair(pair.symbol, cfg.tdKey);
+      const sig = generateSignal(data.closes);
+      const cardEl = grid.querySelector('[data-symbol="' + CSS.escape(pair.symbol) + '"]');
+      if (cardEl) cardEl.outerHTML = renderCard(pair, data, sig, null);
+      if (cfg.claudeKey) {
+        getAICommentary(pair, sig, cfg.claudeKey).then(function(ai) {
+          if (ai) {
+            const updated = grid.querySelector('[data-symbol="' + CSS.escape(pair.symbol) + '"]');
+            if (updated) updated.outerHTML = renderCard(pair, data, sig, ai);
+          }
+        });
+      }
+    } catch (e) {
+      const cardEl = grid.querySelector('[data-symbol="' + CSS.escape(pair.symbol) + '"]');
+      if (cardEl) cardEl.outerHTML = renderError(pair, e.message);
+    }
+    done++;
+    setStatus(done + '/' + PAIRS.length + ' loaded');
+    if (done < PAIRS.length) await new Promise(function(r) { setTimeout(r, 8000); });
   }
-  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text);
-    font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 14px; line-height: 1.5;
-    min-height: 100vh; overscroll-behavior-y: none; -webkit-font-smoothing: antialiased; }
-  body { background: radial-gradient(ellipse at top, rgba(110,231,255,0.06), transparent 60%),
-    radial-gradient(ellipse at bottom right, rgba(0,214,143,0.04), transparent 50%), var(--bg);
-    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
-  .wrap { max-width: 1200px; margin: 0 auto; padding: 24px 20px 80px; }
-  header { display: flex; align-items: baseline; justify-content: space-between;
-    padding-bottom: 20px; margin-bottom: 24px; border-bottom: 1px solid var(--line); }
-  .brand { font-family: 'Fraunces', serif; font-weight: 800; font-size: clamp(28px, 5vw, 42px);
-    letter-spacing: -0.02em; line-height: 1; }
-  .brand .dot { color: var(--accent); }
-  .meta { font-size: 11px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.15em; text-align: right; }
-  .meta .live::before { content: ''; display: inline-block; width: 6px; height: 6px;
-    background: var(--buy); border-radius: 50%; margin-right: 6px;
-    box-shadow: 0 0 8px var(--buy); animation: pulse 1.6s infinite; }
-  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
-  .controls { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; align-items: center; }
-  button, .btn { background: var(--bg-2); border: 1px solid var(--line-2); color: var(--text);
-    font-family: inherit; font-size: 12px; padding: 10px 16px; border-radius: 8px;
-    cursor: pointer; transition: all 0.15s ease; text-transform: uppercase;
-    letter-spacing: 0.1em; font-weight: 500; min-height: 44px; }
-  button:hover { background: var(--bg-3); border-color: var(--accent); }
-  button:active { transform: scale(0.98); }
-  button.primary { background: var(--accent); color: #001018; border-color: var(--accent); font-weight: 700; }
-  button.primary:hover { background: #99f0ff; }
-  button:disabled { opacity: 0.5; cursor: not-allowed; }
-  .spacer { flex: 1; }
-  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }
-  .card { background: var(--bg-2); border: 1px solid var(--line); border-radius: 14px;
-    padding: 18px; box-shadow: var(--shadow); position: relative; overflow: hidden;
-    transition: border-color 0.2s ease, transform 0.2s ease; }
-  .card:hover { border-color: var(--line-2); }
-  .card.buy::before, .card.sell::before, .card.neutral::before {
-    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
-  .card.buy::before { background: var(--buy); }
-  .card.sell::before { background: var(--sell); }
-  .card.neutral::before { background: var(--neutral); }
-  .card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
-  .pair { font-family: 'Fraunces', serif; font-weight: 600; font-size: 24px; letter-spacing: -0.01em; }
-  .price-block { text-align: right; }
-  .price { font-size: 18px; font-weight: 500; }
-  .change { font-size: 11px; margin-top: 2px; }
-  .change.up { color: var(--buy); }
-  .change.down { color: var(--sell); }
-  .signal-row { display: flex; align-items: center; gap: 10px; margin: 14px 0 10px; }
-  .signal-tag { padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 700;
-    text-transform: uppercase; letter-spacing: 0.1em; }
-  .signal-tag.buy { background: rgba(0,214,143,0.15); color: var(--buy); border: 1px solid rgba(0,214,143,0.3); }
-  .signal-tag.sell { background: rgba(255,85,119,0.15); color: var(--sell); border: 1px solid rgba(255,85,119,0.3); }
-  .signal-tag.neutral { background: rgba(240,180,41,0.15); color: var(--neutral); border: 1px solid rgba(240,180,41,0.3); }
-  .confidence { font-size: 11px; color: var(--text-dim); }
-  .indicators { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
-    margin: 12px 0; padding: 10px; background: var(--bg); border-radius: 8px; border: 1px solid var(--line); }
-  .ind { text-align: center; }
-  .ind-label { font-size: 9px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.1em; }
-  .ind-val { font-size: 13px; font-weight: 500; margin-top: 2px; }
-  .reasoning { font-size: 12px; color: var(--text-dim); line-height: 1.55;
-    margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--line);
-    font-family: 'Fraunces', serif; font-style: italic; }
-  .reasoning .label { font-family: 'JetBrains Mono', monospace; font-style: normal; font-size: 9px;
-    color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.1em;
-    display: block; margin-bottom: 4px; }
-  .skeleton { background: linear-gradient(90deg, var(--bg-3) 0%, var(--line-2) 50%, var(--bg-3) 100%);
-    background-size: 200% 100%; animation: shimmer 1.4s infinite; border-radius: 4px; }
-  @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-  .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.7);
-    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-    display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
-  .modal-bg.show { display: flex; }
-  .modal { background: var(--bg-2); border: 1px solid var(--line-2); border-radius: 16px;
-    padding: 28px; max-width: 500px; width: 100%; box-shadow: var(--shadow); }
-  .modal h2 { font-family: 'Fraunces', serif; font-weight: 600; margin: 0 0 8px; font-size: 26px; letter-spacing: -0.01em; }
-  .modal p { color: var(--text-dim); font-size: 13px; margin: 0 0 20px; line-height: 1.6; }
-  .modal label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em;
-    color: var(--text-faint); margin-bottom: 6px; margin-top: 14​​​​​​​​​​​​​​​​
+  ts.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  setStatus('Done');
+  document.getElementById('refresh').disabled = false;
+  toast('Signals updated', 'success');
+}
+const modal = document.getElementById('modal');
+function openModal() {
+  const cfg = loadConfig();
+  document.getElementById('td-key').value = cfg.tdKey || '';
+  document.getElementById('claude-key').value = cfg.claudeKey || '';
+  modal.classList.add('show');
+}
+function closeModal() { modal.classList.remove('show'); }
+document.getElementById('settings').addEventListener('click', openModal);
+document.getElementById('cancel-settings').addEventListener('click', closeModal);
+document.getElementById('save-settings').addEventListener('click', function() {
+  const tdKey = document.getElementById('td-key').value.trim();
+  const claudeKey = document.getElementById('claude-key').value.trim();
+  if (!tdKey) { toast('TwelveData key is required', 'error'); return; }
+  saveConfig({ tdKey: tdKey, claudeKey: claudeKey });
+  closeModal(); toast('Saved', 'success'); refreshAll();
+});
+document.getElementById('refresh').addEventListener('click', refreshAll);
+modal.addEventListener('click', function(e) { if (e.target === modal) closeModal(); });
+const initialCfg = loadConfig();
+if (!initialCfg.tdKey) { openModal(); showSkeletons(); } else { refreshAll(); }
+</script>
+</body>
+</html>
