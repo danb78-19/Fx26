@@ -17,15 +17,28 @@
 html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 14px; line-height: 1.5; min-height: 100vh; overscroll-behavior-y: none; -webkit-font-smoothing: antialiased; }
 body { background: radial-gradient(ellipse at top, rgba(110,231,255,0.06), transparent 60%), radial-gradient(ellipse at bottom right, rgba(0,214,143,0.04), transparent 50%), var(--bg); padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
 .wrap { max-width: 1200px; margin: 0 auto; padding: 24px 20px 80px; }
-header { display: flex; align-items: baseline; justify-content: space-between; padding-bottom: 20px; margin-bottom: 24px; border-bottom: 1px solid var(--line); }
+header { display: flex; align-items: baseline; justify-content: space-between; padding-bottom: 20px; margin-bottom: 16px; border-bottom: 1px solid var(--line); }
 .brand { font-family: 'Fraunces', serif; font-weight: 800; font-size: clamp(28px, 5vw, 42px); letter-spacing: -0.02em; line-height: 1; }
 .brand .dot { color: var(--accent); }
 .meta { font-size: 11px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.15em; text-align: right; }
 .meta .live::before { content: ''; display: inline-block; width: 6px; height: 6px; background: var(--buy); border-radius: 50%; margin-right: 6px; box-shadow: 0 0 8px var(--buy); animation: pulse 1.6s infinite; }
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+.stats-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; padding: 14px; background: var(--bg-2); border: 1px solid var(--line); border-radius: 12px; }
+.stat { text-align: center; }
+.stat-label { font-size: 9px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px; }
+.stat-val { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 600; }
+.stat-val.pos { color: var(--buy); }
+.stat-val.neg { color: var(--sell); }
+.stat-val.dim { color: var(--text-dim); }
+.tabs { display: flex; gap: 4px; margin-bottom: 18px; border-bottom: 1px solid var(--line); }
+.tab { padding: 12px 18px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); cursor: pointer; border-bottom: 2px solid transparent; font-weight: 500; min-height: 44px; }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
 .controls { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; align-items: center; }
 button { background: var(--bg-2); border: 1px solid var(--line-2); color: var(--text); font-family: inherit; font-size: 12px; padding: 10px 16px; border-radius: 8px; cursor: pointer; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 500; min-height: 44px; }
 button.primary { background: var(--accent); color: #001018; border-color: var(--accent); font-weight: 700; }
+button.win { background: rgba(0,214,143,0.15); color: var(--buy); border-color: rgba(0,214,143,0.3); }
+button.loss { background: rgba(255,85,119,0.15); color: var(--sell); border-color: rgba(255,85,119,0.3); }
+button.small { padding: 6px 10px; font-size: 10px; min-height: 32px; }
 button:disabled { opacity: 0.5; }
 .spacer { flex: 1; }
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }
@@ -53,21 +66,35 @@ button:disabled { opacity: 0.5; }
 .ind-val { font-size: 13px; font-weight: 500; margin-top: 2px; }
 .reasoning { font-size: 12px; color: var(--text-dim); line-height: 1.55; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--line); font-family: 'Fraunces', serif; font-style: italic; }
 .reasoning .label { font-family: 'JetBrains Mono', monospace; font-style: normal; font-size: 9px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.1em; display: block; margin-bottom: 4px; }
+.card-actions { margin-top: 12px; }
 .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
 .modal-bg.show { display: flex; }
-.modal { background: var(--bg-2); border: 1px solid var(--line-2); border-radius: 16px; padding: 28px; max-width: 500px; width: 100%; }
+.modal { background: var(--bg-2); border: 1px solid var(--line-2); border-radius: 16px; padding: 28px; max-width: 500px; width: 100%; max-height: 90vh; overflow-y: auto; }
 .modal h2 { font-family: 'Fraunces', serif; margin: 0 0 8px; font-size: 26px; }
 .modal p { color: var(--text-dim); font-size: 13px; margin: 0 0 20px; }
 .modal label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); margin-bottom: 6px; margin-top: 14px; }
 .modal input { width: 100%; background: var(--bg); border: 1px solid var(--line-2); color: var(--text); font-family: inherit; font-size: 13px; padding: 12px 14px; border-radius: 8px; outline: none; min-height: 44px; }
-.modal .actions { display: flex; gap: 8px; margin-top: 22px; justify-content: flex-end; }
+.modal .actions { display: flex; gap: 8px; margin-top: 22px; justify-content: flex-end; flex-wrap: wrap; }
 .hint { font-size: 11px; color: var(--text-faint); margin-top: 6px; }
 .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-100px); background: var(--bg-3); border: 1px solid var(--line-2); color: var(--text); padding: 12px 18px; border-radius: 8px; font-size: 13px; z-index: 200; transition: transform 0.3s ease; }
 .toast.show { transform: translateX(-50%) translateY(0); }
 .toast.error { border-color: var(--sell); }
 .toast.success { border-color: var(--buy); }
 .disclaimer { margin-top: 32px; padding: 14px 16px; background: var(--bg-2); border: 1px solid var(--line); border-left: 3px solid var(--neutral); border-radius: 8px; font-size: 12px; color: var(--text-dim); }
-@media (max-width: 600px) { .grid { grid-template-columns: 1fr; } header { flex-direction: column; align-items: flex-start; gap: 8px; } }
+.journal-entry { background: var(--bg-2); border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin-bottom: 10px; }
+.journal-entry.win { border-left: 3px solid var(--buy); }
+.journal-entry.loss { border-left: 3px solid var(--sell); }
+.journal-entry.open { border-left: 3px solid var(--neutral); }
+.je-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.je-pair { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 600; }
+.je-meta { font-size: 11px; color: var(--text-faint); }
+.je-body { display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 10px; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--line); }
+.je-field { font-size: 11px; }
+.je-field-label { color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.1em; font-size: 9px; }
+.je-field-val { font-size: 14px; font-weight: 500; margin-top: 2px; }
+.je-actions { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+.empty-state { text-align: center; padding: 60px 20px; color: var(--text-faint); font-family: 'Fraunces', serif; font-style: italic; }
+@media (max-width: 600px) { .grid { grid-template-columns: 1fr; } header { flex-direction: column; align-items: flex-start; gap: 8px; } .stats-bar { grid-template-columns: repeat(2, 1fr); } }
 </style>
 </head>
 <body>
@@ -79,17 +106,43 @@ button:disabled { opacity: 0.5; }
       <div style="margin-top:4px">10 majors · technicals + AI</div>
     </div>
   </header>
-  <div class="controls">
-    <button id="refresh" class="primary">↻ Refresh Signals</button>
-    <button id="settings">⚙ Settings</button>
-    <div class="spacer"></div>
-    <span id="status" style="font-size: 11px; color: var(--text-faint);"></span>
+
+  <div class="stats-bar" id="stats-bar">
+    <div class="stat"><div class="stat-label">Trades</div><div class="stat-val dim" id="stat-total">0</div></div>
+    <div class="stat"><div class="stat-label">Win Rate</div><div class="stat-val dim" id="stat-winrate">—</div></div>
+    <div class="stat"><div class="stat-label">Total Pips</div><div class="stat-val dim" id="stat-pips">—</div></div>
+    <div class="stat"><div class="stat-label">Total R</div><div class="stat-val dim" id="stat-r">—</div></div>
   </div>
-  <div id="grid" class="grid"></div>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="signals">Signals</div>
+    <div class="tab" data-tab="journal">Journal</div>
+  </div>
+
+  <div id="tab-signals">
+    <div class="controls">
+      <button id="refresh" class="primary">↻ Refresh Signals</button>
+      <button id="settings">⚙ Settings</button>
+      <div class="spacer"></div>
+      <span id="status" style="font-size: 11px; color: var(--text-faint);"></span>
+    </div>
+    <div id="grid" class="grid"></div>
+  </div>
+
+  <div id="tab-journal" style="display:none">
+    <div class="controls">
+      <button id="clear-journal">Clear Journal</button>
+      <div class="spacer"></div>
+      <span style="font-size: 11px; color: var(--text-faint);">Tap a signal card to log a trade</span>
+    </div>
+    <div id="journal-list"></div>
+  </div>
+
   <div class="disclaimer">
     <strong>Not financial advice.</strong> Signals are algorithmic suggestions based on technical indicators. No system delivers guaranteed win rates. Use proper risk management.
   </div>
 </div>
+
 <div class="modal-bg" id="modal">
   <div class="modal">
     <h2>Setup</h2>
@@ -106,7 +159,38 @@ button:disabled { opacity: 0.5; }
     </div>
   </div>
 </div>
+
+<div class="modal-bg" id="log-modal">
+  <div class="modal">
+    <h2 id="log-title">Log Trade</h2>
+    <p>Logging this signal as a trade. Edit the entry price if your fill differed.</p>
+    <label>Entry Price</label>
+    <input type="text" id="log-entry" inputmode="decimal" />
+    <label>Stop Loss (pips)</label>
+    <input type="text" id="log-stop" inputmode="decimal" placeholder="e.g. 30" />
+    <div class="hint">Used to calculate R-multiple later. Default 30 pips if blank.</div>
+    <div class="actions">
+      <button id="log-cancel">Cancel</button>
+      <button id="log-save" class="primary">Log Trade</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="close-modal">
+  <div class="modal">
+    <h2 id="close-title">Close Trade</h2>
+    <p>Enter the exit price. Win/Loss, pips, and R will be calculated.</p>
+    <label>Exit Price</label>
+    <input type="text" id="close-exit" inputmode="decimal" />
+    <div class="actions">
+      <button id="close-cancel">Cancel</button>
+      <button id="close-save" class="primary">Close Trade</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
+
 <script>
 const PAIRS = [
   { symbol: 'EUR/USD', name: 'Euro / US Dollar' },
@@ -121,8 +205,12 @@ const PAIRS = [
   { symbol: 'GBP/JPY', name: 'British Pound / Japanese Yen' }
 ];
 const STORAGE_KEY = 'fx-signals-config-v1';
+const JOURNAL_KEY = 'fx-signals-journal-v1';
 function loadConfig() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch { return {}; } }
 function saveConfig(cfg) { localStorage.setItem(STORAGE_KEY, JSON.stringify(cfg)); }
+function loadJournal() { try { return JSON.parse(localStorage.getItem(JOURNAL_KEY) || '[]'); } catch { return []; } }
+function saveJournal(j) { localStorage.setItem(JOURNAL_KEY, JSON.stringify(j)); }
+function pipValue(symbol) { return symbol.indexOf('JPY') !== -1 ? 0.01 : 0.0001; }
 function sma(values, period) { if (values.length < period) return null; const slice = values.slice(-period); return slice.reduce((a, b) => a + b, 0) / period; }
 function ema(values, period) { if (values.length < period) return null; const k = 2 / (period + 1); let e = values.slice(0, period).reduce((a, b) => a + b, 0) / period; for (let i = period; i < values.length; i++) e = values[i] * k + e * (1 - k); return e; }
 function rsi(values, period) { period = period || 14; if (values.length < period + 1) return null; let gains = 0, losses = 0; for (let i = 1; i <= period; i++) { const d = values[i] - values[i - 1]; if (d > 0) gains += d; else losses -= d; } let avgG = gains / period, avgL = losses / period; for (let i = period + 1; i < values.length; i++) { const d = values[i] - values[i - 1]; avgG = (avgG * (period - 1) + Math.max(d, 0)) / period; avgL = (avgL * (period - 1) + Math.max(-d, 0)) / period; } if (avgL === 0) return 100; return 100 - 100 / (1 + avgG / avgL); }
@@ -173,6 +261,8 @@ async function getAICommentary(pair, sig, apiKey) {
 const grid = document.getElementById('grid');
 const ts = document.getElementById('ts');
 const statusEl = document.getElementById('status');
+const journalList = document.getElementById('journal-list');
+let currentSignals = {};
 function skeletonCard(pair) {
   return '<div class="card" data-symbol="' + pair.symbol + '"><div class="card-head"><div><div class="pair">' + pair.symbol + '</div><div style="font-size:10px;color:var(--text-faint);margin-top:2px;text-transform:uppercase;letter-spacing:0.1em">' + pair.name + '</div></div></div><div style="margin-top:14px;font-size:12px;color:var(--text-faint)">Loading...</div></div>';
 }
@@ -180,7 +270,9 @@ function renderCard(pair, data, sig, ai) {
   const cls = sig.signal;
   const changeCls = data.change >= 0 ? 'up' : 'down';
   const changeSign = data.change >= 0 ? '▲' : '▼';
-  return '<div class="card ' + cls + '" data-symbol="' + pair.symbol + '"><div class="card-head"><div><div class="pair">' + pair.symbol + '</div><div style="font-size:10px;color:var(--text-faint);margin-top:2px;text-transform:uppercase;letter-spacing:0.1em">' + pair.name + '</div></div><div class="price-block"><div class="price">' + data.latest.toFixed(5) + '</div><div class="change ' + changeCls + '">' + changeSign + ' ' + Math.abs(data.change).toFixed(3) + '%</div></div></div><div class="signal-row"><span class="signal-tag ' + cls + '">' + sig.signal + '</span><span class="confidence">' + sig.confidence + '% confidence</span></div><div class="indicators"><div class="ind"><div class="ind-label">RSI 14</div><div class="ind-val">' + sig.indicators.rsi + '</div></div><div class="ind"><div class="ind-label">MACD</div><div class="ind-val">' + sig.indicators.macd + '</div></div><div class="ind"><div class="ind-label">SMA 50</div><div class="ind-val">' + sig.indicators.sma50 + '</div></div></div>' + (ai ? '<div class="reasoning"><span class="label">AI Analysis</span>' + ai + '</div>' : '<div class="reasoning"><span class="label">Reasoning</span>' + sig.reasons.join(' · ') + '</div>') + '</div>';
+  const canLog = sig.signal !== 'neutral';
+  const logBtn = canLog ? '<div class="card-actions"><button class="small primary log-btn" data-symbol="' + pair.symbol + '">＋ Log Trade</button></div>' : '';
+  return '<div class="card ' + cls + '" data-symbol="' + pair.symbol + '"><div class="card-head"><div><div class="pair">' + pair.symbol + '</div><div style="font-size:10px;color:var(--text-faint);margin-top:2px;text-transform:uppercase;letter-spacing:0.1em">' + pair.name + '</div></div><div class="price-block"><div class="price">' + data.latest.toFixed(5) + '</div><div class="change ' + changeCls + '">' + changeSign + ' ' + Math.abs(data.change).toFixed(3) + '%</div></div></div><div class="signal-row"><span class="signal-tag ' + cls + '">' + sig.signal + '</span><span class="confidence">' + sig.confidence + '% confidence</span></div><div class="indicators"><div class="ind"><div class="ind-label">RSI 14</div><div class="ind-val">' + sig.indicators.rsi + '</div></div><div class="ind"><div class="ind-label">MACD</div><div class="ind-val">' + sig.indicators.macd + '</div></div><div class="ind"><div class="ind-label">SMA 50</div><div class="ind-val">' + sig.indicators.sma50 + '</div></div></div>' + (ai ? '<div class="reasoning"><span class="label">AI Analysis</span>' + ai + '</div>' : '<div class="reasoning"><span class="label">Reasoning</span>' + sig.reasons.join(' · ') + '</div>') + logBtn + '</div>';
 }
 function renderError(pair, message) {
   return '<div class="card" data-symbol="' + pair.symbol + '" style="border-color: var(--sell);"><div class="card-head"><div><div class="pair">' + pair.symbol + '</div><div style="font-size:10px;color:var(--text-faint);margin-top:2px;text-transform:uppercase;letter-spacing:0.1em">' + pair.name + '</div></div></div><div style="margin-top:14px;font-size:12px;color:var(--sell)">⚠ ' + message + '</div></div>';
@@ -203,6 +295,7 @@ async function refreshAll() {
     try {
       const data = await fetchPair(pair.symbol, cfg.tdKey);
       const sig = generateSignal(data.closes);
+      currentSignals[pair.symbol] = { pair: pair, data: data, sig: sig };
       const cardEl = grid.querySelector('[data-symbol="' + CSS.escape(pair.symbol) + '"]');
       if (cardEl) cardEl.outerHTML = renderCard(pair, data, sig, null);
       if (cfg.claudeKey) {
@@ -226,6 +319,135 @@ async function refreshAll() {
   document.getElementById('refresh').disabled = false;
   toast('Signals updated', 'success');
 }
+</script>
+<script>
+function renderJournal() {
+  const trades = loadJournal();
+  if (trades.length === 0) { journalList.innerHTML = '<div class="empty-state">No trades logged yet. Tap "Log Trade" on any BUY or SELL signal to start tracking.</div>'; return; }
+  journalList.innerHTML = trades.map(function(t) {
+    const status = t.status || 'open';
+    const dateStr = new Date(t.openedAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    const pipsStr = t.pips !== undefined ? (t.pips >= 0 ? '+' : '') + t.pips.toFixed(1) : '—';
+    const rStr = t.r !== undefined ? (t.r >= 0 ? '+' : '') + t.r.toFixed(2) + 'R' : '—';
+    const exitStr = t.exit !== undefined ? t.exit : '—';
+    const actions = status === 'open'
+      ? '<button class="small primary close-btn" data-id="' + t.id + '">Close Trade</button> <button class="small delete-btn" data-id="' + t.id + '">Delete</button>'
+      : '<button class="small delete-btn" data-id="' + t.id + '">Delete</button>';
+    return '<div class="journal-entry ' + status + '"><div class="je-head"><div><span class="je-pair">' + t.symbol + '</span> <span class="signal-tag ' + t.direction + '" style="margin-left:8px">' + t.direction + '</span></div><div class="je-meta">' + dateStr + ' · ' + status.toUpperCase() + '</div></div><div class="je-body"><div class="je-field"><div class="je-field-label">Entry</div><div class="je-field-val">' + t.entry + '</div></div><div class="je-field"><div class="je-field-label">Exit</div><div class="je-field-val">' + exitStr + '</div></div><div class="je-field"><div class="je-field-label">Stop (pips)</div><div class="je-field-val">' + t.stopPips + '</div></div><div class="je-field"><div class="je-field-label">Pips</div><div class="je-field-val ' + (t.pips > 0 ? 'change up' : t.pips < 0 ? 'change down' : '') + '">' + pipsStr + '</div></div><div class="je-field"><div class="je-field-label">R</div><div class="je-field-val ' + (t.r > 0 ? 'change up' : t.r < 0 ? 'change down' : '') + '">' + rStr + '</div></div></div><div class="je-actions">' + actions + '</div></div>';
+  }).join('');
+  journalList.querySelectorAll('.close-btn').forEach(function(b) { b.addEventListener('click', function() { openCloseModal(b.dataset.id); }); });
+  journalList.querySelectorAll('.delete-btn').forEach(function(b) { b.addEventListener('click', function() { deleteTrade(b.dataset.id); }); });
+}
+function renderStats() {
+  const trades = loadJournal().filter(function(t) { return t.status === 'win' || t.status === 'loss'; });
+  const total = trades.length;
+  const wins = trades.filter(function(t) { return t.status === 'win'; }).length;
+  const totalPips = trades.reduce(function(s, t) { return s + (t.pips || 0); }, 0);
+  const totalR = trades.reduce(function(s, t) { return s + (t.r || 0); }, 0);
+  document.getElementById('stat-total').textContent = total;
+  document.getElementById('stat-total').className = 'stat-val ' + (total > 0 ? '' : 'dim');
+  if (total > 0) {
+    const wr = (wins / total) * 100;
+    document.getElementById('stat-winrate').textContent = wr.toFixed(0) + '%';
+    document.getElementById('stat-winrate').className = 'stat-val ' + (wr >= 50 ? 'pos' : 'neg');
+    document.getElementById('stat-pips').textContent = (totalPips >= 0 ? '+' : '') + totalPips.toFixed(0);
+    document.getElementById('stat-pips').className = 'stat-val ' + (totalPips >= 0 ? 'pos' : 'neg');
+    document.getElementById('stat-r').textContent = (totalR >= 0 ? '+' : '') + totalR.toFixed(1) + 'R';
+    document.getElementById('stat-r').className = 'stat-val ' + (totalR >= 0 ? 'pos' : 'neg');
+  } else {
+    document.getElementById('stat-winrate').textContent = '—'; document.getElementById('stat-winrate').className = 'stat-val dim';
+    document.getElementById('stat-pips').textContent = '—'; document.getElementById('stat-pips').className = 'stat-val dim';
+    document.getElementById('stat-r').textContent = '—'; document.getElementById('stat-r').className = 'stat-val dim';
+  }
+}
+function deleteTrade(id) {
+  if (!confirm('Delete this trade?')) return;
+  const trades = loadJournal().filter(function(t) { return t.id !== id; });
+  saveJournal(trades); renderJournal(); renderStats();
+}
+let pendingLog = null;
+function openLogModal(symbol) {
+  const s = currentSignals[symbol];
+  if (!s) { toast('Refresh signals first', 'error'); return; }
+  pendingLog = s;
+  document.getElementById('log-title').textContent = 'Log ' + s.sig.signal.toUpperCase() + ' · ' + symbol;
+  document.getElementById('log-entry').value = s.data.latest.toFixed(5);
+  document.getElementById('log-stop').value = '30';
+  document.getElementById('log-modal').classList.add('show');
+}
+function closeLogModal() { document.getElementById('log-modal').classList.remove('show'); pendingLog = null; }
+document.getElementById('log-cancel').addEventListener('click', closeLogModal);
+document.getElementById('log-save').addEventListener('click', function() {
+  if (!pendingLog) return;
+  const entry = parseFloat(document.getElementById('log-entry').value);
+  const stopPips = parseFloat(document.getElementById('log-stop').value) || 30;
+  if (isNaN(entry)) { toast('Enter a valid entry price', 'error'); return; }
+  const trades = loadJournal();
+  trades.unshift({
+    id: 'tr_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+    symbol: pendingLog.pair.symbol,
+    direction: pendingLog.sig.signal,
+    entry: entry,
+    stopPips: stopPips,
+    confidence: pendingLog.sig.confidence,
+    openedAt: Date.now(),
+    status: 'open'
+  });
+  saveJournal(trades);
+  closeLogModal(); renderJournal(); renderStats();
+  toast('Trade logged', 'success');
+});
+let pendingClose = null;
+function openCloseModal(id) {
+  const trades = loadJournal();
+  const t = trades.find(function(x) { return x.id === id; });
+  if (!t) return;
+  pendingClose = t;
+  document.getElementById('close-title').textContent = 'Close ' + t.symbol + ' · ' + t.direction.toUpperCase();
+  document.getElementById('close-exit').value = '';
+  document.getElementById('close-modal').classList.add('show');
+}
+function closeCloseModal() { document.getElementById('close-modal').classList.remove('show'); pendingClose = null; }
+document.getElementById('close-cancel').addEventListener('click', closeCloseModal);
+document.getElementById('close-save').addEventListener('click', function() {
+  if (!pendingClose) return;
+  const exit = parseFloat(document.getElementById('close-exit').value);
+  if (isNaN(exit)) { toast('Enter a valid exit price', 'error'); return; }
+  const pip = pipValue(pendingClose.symbol);
+  let priceDiff = exit - pendingClose.entry;
+  if (pendingClose.direction === 'sell') priceDiff = -priceDiff;
+  const pips = priceDiff / pip;
+  const r = pips / pendingClose.stopPips;
+  const trades = loadJournal();
+  const idx = trades.findIndex(function(x) { return x.id === pendingClose.id; });
+  if (idx !== -1) {
+    trades[idx].exit = exit; trades[idx].pips = pips; trades[idx].r = r;
+    trades[idx].status = pips >= 0 ? 'win' : 'loss';
+    trades[idx].closedAt = Date.now();
+    saveJournal(trades);
+  }
+  closeCloseModal(); renderJournal(); renderStats();
+  toast(pips >= 0 ? 'Win logged: +' + pips.toFixed(1) + ' pips' : 'Loss logged: ' + pips.toFixed(1) + ' pips', pips >= 0 ? 'success' : 'error');
+});
+document.addEventListener('click', function(e) {
+  const btn = e.target.closest('.log-btn');
+  if (btn) openLogModal(btn.dataset.symbol);
+});
+document.getElementById('clear-journal').addEventListener('click', function() {
+  if (!confirm('Delete ALL trades? This cannot be undone.')) return;
+  saveJournal([]); renderJournal(); renderStats();
+  toast('Journal cleared');
+});
+document.querySelectorAll('.tab').forEach(function(tab) {
+  tab.addEventListener('click', function() {
+    document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+    tab.classList.add('active');
+    const which = tab.dataset.tab;
+    document.getElementById('tab-signals').style.display = which === 'signals' ? '' : 'none';
+    document.getElementById('tab-journal').style.display = which === 'journal' ? '' : 'none';
+    if (which === 'journal') renderJournal();
+  });
+});
 const modal = document.getElementById('modal');
 function openModal() {
   const cfg = loadConfig();
@@ -245,6 +467,7 @@ document.getElementById('save-settings').addEventListener('click', function() {
 });
 document.getElementById('refresh').addEventListener('click', refreshAll);
 modal.addEventListener('click', function(e) { if (e.target === modal) closeModal(); });
+renderStats();
 const initialCfg = loadConfig();
 if (!initialCfg.tdKey) { openModal(); showSkeletons(); } else { refreshAll(); }
 </script>
