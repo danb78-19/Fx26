@@ -216,7 +216,47 @@ button:disabled { opacity: 0.5; }
     </div>
     <div class="hint">Alerts trigger only on Refresh. iPad Safari can't ping you in the background.</div>
 
-    <div class="actions">
+      <h3>Position Size</h3>
+    <label>Sizing Mode</label>
+    <select id="sizing-mode">
+      <option value="risk">Account balance + risk %</option>
+      <option value="fixed">Fixed lot size</option>
+      <option value="off">Off (don't show)</option>
+    </select>
+    <div id="risk-fields">
+      <label>Account Balance</label>
+      <div class="input-row">
+        <select id="account-currency" style="max-width:90px"><option value="GBP">£ GBP</option><option value="USD">$ USD</option><option value="EUR">€ EUR</option></select>
+        <input type="text" id="account-balance" inputmode="decimal" placeholder="e.g. 5000" />
+      </div>
+      <label>Risk per trade (%)</label>
+      <input type="text" id="risk-percent" inputmode="decimal" placeholder="e.g. 1" />
+      <div class="hint">Pros risk 0.5–2% per trade. Above 2% blows accounts fast.</div>
+    </div>
+    <div id="fixed-fields" style="display:none">
+      <label>Fixed Lot Size (mini lots)</label>
+      <input type="text" id="fixed-lots" inputmode="decimal" placeholder="e.g. 1" />
+      <div class="hint">1 mini lot = 10,000 units. Standard lot = 10 mini lots.</div>
+    </div>
+
+    <h3>Alerts</h3>
+    <div class="toggle-row">
+      <div>
+        <div class="toggle-label">High-quality alerts (≥75% confidence)</div>
+        <div class="toggle-hint">Loud chime, bright banner</div>
+      </div>
+      <div class="toggle-switch" id="alert-high"></div>
+    </div>
+    <div class="toggle-row">
+      <div>
+        <div class="toggle-label">Standard alerts (any new signal)</div>
+        <div class="toggle-hint">Soft chime, subtle banner</div>
+      </div>
+      <div class="toggle-switch" id="alert-standard"></div>
+    </div>
+    <div class="hint">Alerts trigger only on Refresh. iPad Safari can't ping you in the background.</div>
+
+  <div class="actions">
       <button id="cancel-settings">Cancel</button>
       <button id="save-settings" class="primary">Save</button>
     </div>
