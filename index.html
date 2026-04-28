@@ -64,6 +64,7 @@ button:disabled { opacity: 0.5; }
 .ind { text-align: center; }
 .ind-label { font-size: 9px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.1em; }
 .ind-val { font-size: 13px; font-weight: 500; margin-top: 2px; }
+.trade-plan-label { font-size: 9px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.1em; margin: 14px 0 4px; font-weight: 700; }
 .reasoning { font-size: 12px; color: var(--text-dim); line-height: 1.55; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--line); font-family: 'Fraunces', serif; font-style: italic; }
 .reasoning .label { font-family: 'JetBrains Mono', monospace; font-style: normal; font-size: 9px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.1em; display: block; margin-bottom: 4px; }
 .card-actions { margin-top: 12px; }
@@ -139,7 +140,7 @@ button:disabled { opacity: 0.5; }
   </div>
 
   <div class="disclaimer">
-    <strong>Not financial advice.</strong> Signals are algorithmic suggestions based on technical indicators. No system delivers guaranteed win rates. Use proper risk management.
+    <strong>Not financial advice.</strong> Signals and SL/TP are algorithmic suggestions based on technical indicators and a fixed 1:2 risk-reward template. No system delivers guaranteed win rates. Use proper risk management.
   </div>
 </div>
 
@@ -163,12 +164,15 @@ button:disabled { opacity: 0.5; }
 <div class="modal-bg" id="log-modal">
   <div class="modal">
     <h2 id="log-title">Log Trade</h2>
-    <p>Logging this signal as a trade. Edit the entry price if your fill differed.</p>
+    <p>Logging this signal as a trade. Defaults are 30 pip stop, 60 pip target (1:2 R:R). Edit if needed.</p>
     <label>Entry Price</label>
     <input type="text" id="log-entry" inputmode="decimal" />
     <label>Stop Loss (pips)</label>
     <input type="text" id="log-stop" inputmode="decimal" placeholder="e.g. 30" />
-    <div class="hint">Used to calculate R-multiple later. Default 30 pips if blank.</div>
+    <div class="hint">Used to calculate R-multiple later.</div>
+    <label>Take Profit (pips)</label>
+    <input type="text" id="log-tp" inputmode="decimal" placeholder="e.g. 60" />
+    <div class="hint">Recommended 1:2 risk-reward = 2× your stop. Logged with the trade.</div>
     <div class="actions">
       <button id="log-cancel">Cancel</button>
       <button id="log-save" class="primary">Log Trade</button>
@@ -206,11 +210,14 @@ const PAIRS = [
 ];
 const STORAGE_KEY = 'fx-signals-config-v1';
 const JOURNAL_KEY = 'fx-signals-journal-v1';
+const DEFAULT_STOP_PIPS = 30;
+const DEFAULT_TP_PIPS = 60;
 function loadConfig() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch { return {}; } }
 function saveConfig(cfg) { localStorage.setItem(STORAGE_KEY, JSON.stringify(cfg)); }
 function loadJournal() { try { return JSON.parse(localStorage.getItem(JOURNAL_KEY) || '[]'); } catch { return []; } }
 function saveJournal(j) { localStorage.setItem(JOURNAL_KEY, JSON.stringify(j)); }
 function pipValue(symbol) { return symbol.indexOf('JPY') !== -1 ? 0.01 : 0.0001; }
+function priceDecimals(symbol) { return symbol.indexOf('JPY') !== -1 ? 3 : 5; }
 function sma(values, period) { if (values.length < period) return null; const slice = values.slice(-period); return slice.reduce((a, b) => a + b, 0) / period; }
 function ema(values, period) { if (values.length < period) return null; const k = 2 / (period + 1); let e = values.slice(0, period).reduce((a, b) => a + b, 0) / period; for (let i = period; i < values.length; i++) e = values[i] * k + e * (1 - k); return e; }
 function rsi(values, period) { period = period || 14; if (values.length < period + 1) return null; let gains = 0, losses = 0; for (let i = 1; i <= period; i++) { const d = values[i] - values[i - 1]; if (d > 0) gains += d; else losses -= d; } let avgG = gains / period, avgL = losses / period; for (let i = period + 1; i < values.length; i++) { const d = values[i] - values[i - 1]; avgG = (avgG * (period - 1) + Math.max(d, 0)) / period; avgL = (avgL * (period - 1) + Math.max(-d, 0)) / period; } if (avgL === 0) return 100; return 100 - 100 / (1 + avgG / avgL); }
@@ -271,8 +278,14 @@ function renderCard(pair, data, sig, ai) {
   const changeCls = data.change >= 0 ? 'up' : 'down';
   const changeSign = data.change >= 0 ? '▲' : '▼';
   const canLog = sig.signal !== 'neutral';
-  const logBtn = canLog ? '<div class="card-actions"><button class="small primary log-btn" data-symbol="' + pair.symbol + '">＋ Log Trade</button></div>' : '';
-  return '<div class="card ' + cls + '" data-symbol="' + pair.symbol + '"><div class="card-head"><div><div class="pair">' + pair.symbol + '</div><div style="font-size:10px;color:var(--text-faint);margin-top:2px;text-transform:uppercase;letter-spacing:0.1em">' + pair.name + '</div></div><div class="price-block"><div class="price">' + data.latest.toFixed(5) + '</div><div class="change ' + changeCls + '">' + changeSign + ' ' + Math.abs(data.change).toFixed(3) + '%</div></div></div><div class="signal-row"><span class="signal-tag ' + cls + '">' + sig.signal + '</span><span class="confidence">' + sig.confidence + '% confidence</span></div><div class="indicators"><div class="ind"><div class="ind-label">RSI 14</div><div class="ind-val">' + sig.indicators.rsi + '</div></div><div class="ind"><div class="ind-label">MACD</div><div class="ind-val">' + sig.indicators.macd + '</div></div><div class="ind"><div class="ind-label">SMA 50</div><div class="ind-val">' + sig.indicators.sma50 + '</div></div></div>' + (ai ? '<div class="reasoning"><span class="label">AI Analysis</span>' + ai + '</div>' : '<div class="reasoning"><span class="label">Reasoning</span>' + sig.reasons.join(' · ') + '</div>') + logBtn + '</div>';
+  const pip = pipValue(pair.symbol);
+  const decimals = priceDecimals(pair.symbol);
+  const sl = sig.signal === 'buy' ? data.latest - (DEFAULT_STOP_PIPS * pip) : data.latest + (DEFAULT_STOP_PIPS * pip);
+  const tp = sig.signal === 'buy' ? data.latest + (DEFAULT_TP_PIPS * pip) : data.latest - (DEFAULT_TP_PIPS * pip);
+  const planLabel = canLog ? '<div class="trade-plan-label">Trade Plan · 1:2 R:R</div>' : '';
+  const tradePlan = canLog ? '<div class="indicators" style="margin-top:0"><div class="ind"><div class="ind-label">Entry</div><div class="ind-val">' + data.latest.toFixed(decimals) + '</div></div><div class="ind"><div class="ind-label">SL (-' + DEFAULT_STOP_PIPS + 'p)</div><div class="ind-val" style="color:var(--sell)">' + sl.toFixed(decimals) + '</div></div><div class="ind"><div class="ind-label">TP (+' + DEFAULT_TP_PIPS + 'p)</div><div class="ind-val" style="color:var(--buy)">' + tp.toFixed(decimals) + '</div></div></div>' : '';
+  const logBtn = canLog ? '<div class="card-actions"><button class="small primary log-btn" data-symbol="' + pair.symbol + '">＋ Log Trade · 1:2 R:R</button></div>' : '';
+  return '<div class="card ' + cls + '" data-symbol="' + pair.symbol + '"><div class="card-head"><div><div class="pair">' + pair.symbol + '</div><div style="font-size:10px;color:var(--text-faint);margin-top:2px;text-transform:uppercase;letter-spacing:0.1em">' + pair.name + '</div></div><div class="price-block"><div class="price">' + data.latest.toFixed(decimals) + '</div><div class="change ' + changeCls + '">' + changeSign + ' ' + Math.abs(data.change).toFixed(3) + '%</div></div></div><div class="signal-row"><span class="signal-tag ' + cls + '">' + sig.signal + '</span><span class="confidence">' + sig.confidence + '% confidence</span></div><div class="indicators"><div class="ind"><div class="ind-label">RSI 14</div><div class="ind-val">' + sig.indicators.rsi + '</div></div><div class="ind"><div class="ind-label">MACD</div><div class="ind-val">' + sig.indicators.macd + '</div></div><div class="ind"><div class="ind-label">SMA 50</div><div class="ind-val">' + sig.indicators.sma50 + '</div></div></div>' + planLabel + tradePlan + (ai ? '<div class="reasoning"><span class="label">AI Analysis</span>' + ai + '</div>' : '<div class="reasoning"><span class="label">Reasoning</span>' + sig.reasons.join(' · ') + '</div>') + logBtn + '</div>';
 }
 function renderError(pair, message) {
   return '<div class="card" data-symbol="' + pair.symbol + '" style="border-color: var(--sell);"><div class="card-head"><div><div class="pair">' + pair.symbol + '</div><div style="font-size:10px;color:var(--text-faint);margin-top:2px;text-transform:uppercase;letter-spacing:0.1em">' + pair.name + '</div></div></div><div style="margin-top:14px;font-size:12px;color:var(--sell)">⚠ ' + message + '</div></div>';
@@ -330,10 +343,11 @@ function renderJournal() {
     const pipsStr = t.pips !== undefined ? (t.pips >= 0 ? '+' : '') + t.pips.toFixed(1) : '—';
     const rStr = t.r !== undefined ? (t.r >= 0 ? '+' : '') + t.r.toFixed(2) + 'R' : '—';
     const exitStr = t.exit !== undefined ? t.exit : '—';
+    const tpStr = t.tpPips !== undefined ? t.tpPips : '—';
     const actions = status === 'open'
       ? '<button class="small primary close-btn" data-id="' + t.id + '">Close Trade</button> <button class="small delete-btn" data-id="' + t.id + '">Delete</button>'
       : '<button class="small delete-btn" data-id="' + t.id + '">Delete</button>';
-    return '<div class="journal-entry ' + status + '"><div class="je-head"><div><span class="je-pair">' + t.symbol + '</span> <span class="signal-tag ' + t.direction + '" style="margin-left:8px">' + t.direction + '</span></div><div class="je-meta">' + dateStr + ' · ' + status.toUpperCase() + '</div></div><div class="je-body"><div class="je-field"><div class="je-field-label">Entry</div><div class="je-field-val">' + t.entry + '</div></div><div class="je-field"><div class="je-field-label">Exit</div><div class="je-field-val">' + exitStr + '</div></div><div class="je-field"><div class="je-field-label">Stop (pips)</div><div class="je-field-val">' + t.stopPips + '</div></div><div class="je-field"><div class="je-field-label">Pips</div><div class="je-field-val ' + (t.pips > 0 ? 'change up' : t.pips < 0 ? 'change down' : '') + '">' + pipsStr + '</div></div><div class="je-field"><div class="je-field-label">R</div><div class="je-field-val ' + (t.r > 0 ? 'change up' : t.r < 0 ? 'change down' : '') + '">' + rStr + '</div></div></div><div class="je-actions">' + actions + '</div></div>';
+    return '<div class="journal-entry ' + status + '"><div class="je-head"><div><span class="je-pair">' + t.symbol + '</span> <span class="signal-tag ' + t.direction + '" style="margin-left:8px">' + t.direction + '</span></div><div class="je-meta">' + dateStr + ' · ' + status.toUpperCase() + '</div></div><div class="je-body"><div class="je-field"><div class="je-field-label">Entry</div><div class="je-field-val">' + t.entry + '</div></div><div class="je-field"><div class="je-field-label">Exit</div><div class="je-field-val">' + exitStr + '</div></div><div class="je-field"><div class="je-field-label">SL pips</div><div class="je-field-val">' + t.stopPips + '</div></div><div class="je-field"><div class="je-field-label">TP pips</div><div class="je-field-val">' + tpStr + '</div></div><div class="je-field"><div class="je-field-label">Pips</div><div class="je-field-val ' + (t.pips > 0 ? 'change up' : t.pips < 0 ? 'change down' : '') + '">' + pipsStr + '</div></div><div class="je-field"><div class="je-field-label">R</div><div class="je-field-val ' + (t.r > 0 ? 'change up' : t.r < 0 ? 'change down' : '') + '">' + rStr + '</div></div></div><div class="je-actions">' + actions + '</div></div>';
   }).join('');
   journalList.querySelectorAll('.close-btn').forEach(function(b) { b.addEventListener('click', function() { openCloseModal(b.dataset.id); }); });
   journalList.querySelectorAll('.delete-btn').forEach(function(b) { b.addEventListener('click', function() { deleteTrade(b.dataset.id); }); });
@@ -371,8 +385,9 @@ function openLogModal(symbol) {
   if (!s) { toast('Refresh signals first', 'error'); return; }
   pendingLog = s;
   document.getElementById('log-title').textContent = 'Log ' + s.sig.signal.toUpperCase() + ' · ' + symbol;
-  document.getElementById('log-entry').value = s.data.latest.toFixed(5);
-  document.getElementById('log-stop').value = '30';
+  document.getElementById('log-entry').value = s.data.latest.toFixed(priceDecimals(symbol));
+  document.getElementById('log-stop').value = String(DEFAULT_STOP_PIPS);
+  document.getElementById('log-tp').value = String(DEFAULT_TP_PIPS);
   document.getElementById('log-modal').classList.add('show');
 }
 function closeLogModal() { document.getElementById('log-modal').classList.remove('show'); pendingLog = null; }
@@ -380,7 +395,8 @@ document.getElementById('log-cancel').addEventListener('click', closeLogModal);
 document.getElementById('log-save').addEventListener('click', function() {
   if (!pendingLog) return;
   const entry = parseFloat(document.getElementById('log-entry').value);
-  const stopPips = parseFloat(document.getElementById('log-stop').value) || 30;
+  const stopPips = parseFloat(document.getElementById('log-stop').value) || DEFAULT_STOP_PIPS;
+  const tpPips = parseFloat(document.getElementById('log-tp').value) || DEFAULT_TP_PIPS;
   if (isNaN(entry)) { toast('Enter a valid entry price', 'error'); return; }
   const trades = loadJournal();
   trades.unshift({
@@ -389,6 +405,7 @@ document.getElementById('log-save').addEventListener('click', function() {
     direction: pendingLog.sig.signal,
     entry: entry,
     stopPips: stopPips,
+    tpPips: tpPips,
     confidence: pendingLog.sig.confidence,
     openedAt: Date.now(),
     status: 'open'
